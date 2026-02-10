@@ -39,9 +39,14 @@ client.once("clientReady", async () => {
     status: "online"
   });
 
-  // 🎫 Ticket Panel
   const guild = await client.guilds.fetch(GUILD_ID);
   const channel = await guild.channels.fetch(PANEL_CHANNEL_ID);
+
+  // 🔐 KANAL KONTROLÜ (EN ÖNEMLİ SATIRLAR)
+  if (!channel || channel.type !== ChannelType.GuildText) {
+    console.error("❌ PANEL_CHANNEL_ID bir YAZI KANALI değil!");
+    return;
+  }
 
   const embed = new EmbedBuilder()
     .setTitle("🎫 Ticket Destek Sistemi")
@@ -62,7 +67,7 @@ client.once("clientReady", async () => {
 client.on("interactionCreate", async (i) => {
   if (!i.isButton()) return;
 
-  // TICKET AÇ
+  // 🎫 TICKET AÇ
   if (i.customId === "ticket_create") {
     const exists = i.guild.channels.cache.find(
       c => c.name === `ticket-${i.user.id}`
@@ -103,10 +108,10 @@ client.on("interactionCreate", async (i) => {
     i.reply({ content: "✅ Ticket oluşturuldu.", ephemeral: true });
   }
 
-  // TICKET KAPAT
+  // 🔒 TICKET KAPAT
   if (i.customId === "ticket_close") {
     if (!i.channel.name.startsWith("ticket-"))
-      return i.reply({ content: "❌ Bu bir ticket değil.", ephemeral: true });
+      return i.reply({ content: "❌ Bu kanal bir ticket değil.", ephemeral: true });
 
     await i.reply("🔒 Ticket 3 saniye içinde kapatılıyor...");
     setTimeout(() => i.channel.delete(), 3000);
