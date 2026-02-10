@@ -1,8 +1,6 @@
 import {
   Client,
   GatewayIntentBits,
-  Partials,
-  Events,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -10,80 +8,81 @@ import {
   EmbedBuilder,
   ActivityType
 } from "discord.js";
-import "dotenv/config";
+
+/* ================== AYARLAR ================== */
+const TOKEN = "BOT_TOKEN_YAZ";
+const GUILD_ID = "SUNUCU_ID";
+const TICKET_PANEL_CHANNEL = "PANEL_KANAL_ID";
+const TICKET_CATEGORY = "TICKET_KATEGORI_ID";
+const STAFF_ROLE = "YETKILI_ROLE_ID";
+/* ============================================= */
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages
-  ],
-  partials: [Partials.Channel]
+  intents: [GatewayIntentBits.Guilds]
 });
 
-// ================= READY =================
-client.once(Events.ClientReady, async () => {
+/* ================== READY ================== */
+client.once("ready", async () => {
   console.log(`✅ Bot aktif: ${client.user.tag}`);
 
   // 🎥 Yayın yapıyor durumu
   client.user.setPresence({
-    activities: [{
-      name: "SASP ❤️ Rispect",
-      type: ActivityType.Streaming,
-      url: "https://www.twitch.tv/rispectofficial"
-    }],
+    activities: [
+      {
+        name: "SASP ❤️ Rispect",
+        type: ActivityType.Streaming,
+        url: "https://www.twitch.tv/rispectofficial"
+      }
+    ],
     status: "online"
   });
 
-  // Ticket paneli gönder
-  const guild = await client.guilds.fetch(process.env.GUILD_ID);
-  const channel = await guild.channels.fetch(process.env.TICKET_CHANNEL);
+  // Ticket Panel Gönder
+  const guild = await client.guilds.fetch(GUILD_ID);
+  const channel = await guild.channels.fetch(TICKET_PANEL_CHANNEL);
 
   const embed = new EmbedBuilder()
-    .setTitle("🎫 Destek Sistemi")
+    .setTitle("🎫 Ticket Destek Sistemi")
     .setDescription("Destek almak için aşağıdaki butona tıkla.")
     .setColor("Blue");
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId("ticket_create")
-      .setLabel("🎟 Ticket Aç")
+      .setLabel("🎟️ Ticket Aç")
       .setStyle(ButtonStyle.Primary)
   );
 
-  channel.send({ embeds: [embed], components: [row] });
+  await channel.send({ embeds: [embed], components: [row] });
 });
 
-// ================= INTERACTION =================
-client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isButton()) return;
+/* ================== INTERACTION ================== */
+client.on("interactionCreate", async (i) => {
+  if (!i.isButton()) return;
 
-  // ===== TICKET AÇ =====
-  if (interaction.customId === "ticket_create") {
-    const existing = interaction.guild.channels.cache.find(
-      c => c.name === `ticket-${interaction.user.id}`
+  /* ===== TICKET AÇ ===== */
+  if (i.customId === "ticket_create") {
+    const existing = i.guild.channels.cache.find(
+      c => c.name === `ticket-${i.user.id}`
     );
 
-    if (existing) {
-      return interaction.reply({
-        content: "❌ Zaten açık bir ticketin var.",
-        ephemeral: true
-      });
-    }
+    if (existing)
+      return i.reply({ content: "❌ Zaten açık bir ticketin var.", ephemeral: true });
 
-    const channel = await interaction.guild.channels.create({
-      name: `ticket-${interaction.user.id}`,
+    const channel = await i.guild.channels.create({
+      name: `ticket-${i.user.id}`,
       type: ChannelType.GuildText,
-      parent: process.env.TICKET_CATEGORY,
+      parent: TICKET_CATEGORY,
       permissionOverwrites: [
-        { id: interaction.guild.id, deny: ["ViewChannel"] },
-        { id: interaction.user.id, allow: ["ViewChannel", "SendMessages"] },
-        { id: process.env.STAFF_ROLE, allow: ["ViewChannel", "SendMessages"] }
+        { id: i.guild.id, deny: ["ViewChannel"] },
+        { id: i.user.id, allow: ["ViewChannel", "SendMessages"] },
+        { id: STAFF_ROLE, allow: ["ViewChannel", "SendMessages"] }
       ]
     });
 
     const embed = new EmbedBuilder()
       .setTitle("🎫 Ticket Açıldı")
-      .setDescription("Yetkililer seninle ilgilenecek.")
+      .setDescription("Yetkililer seninle ilgilenecek.\nKapatmak için aşağıdaki butonu kullan.")
       .setColor("Green");
 
     const row = new ActionRowBuilder().addComponents(
@@ -93,31 +92,24 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .setStyle(ButtonStyle.Danger)
     );
 
-    channel.send({
-      content: `<@${interaction.user.id}>`,
+    await channel.send({
+      content: `<@${i.user.id}>`,
       embeds: [embed],
       components: [row]
     });
 
-    interaction.reply({
-      content: "✅ Ticket oluşturuldu.",
-      ephemeral: true
-    });
+    i.reply({ content: "✅ Ticket oluşturuldu.", ephemeral: true });
   }
 
-  // ===== TICKET KAPAT =====
-  if (interaction.customId === "ticket_close") {
-    if (!interaction.channel.name.startsWith("ticket-")) {
-      return interaction.reply({
-        content: "❌ Bu kanal bir ticket değil.",
-        ephemeral: true
-      });
-    }
+  /* ===== TICKET KAPAT ===== */
+  if (i.customId === "ticket_close") {
+    if (!i.channel.name.startsWith("ticket-"))
+      return i.reply({ content: "❌ Bu kanal bir ticket değil.", ephemeral: true });
 
-    await interaction.reply("🔒 Ticket 3 saniye içinde kapatılıyor...");
-    setTimeout(() => interaction.channel.delete(), 3000);
+    await i.reply("🔒 Ticket 3 saniye içinde kapatılıyor...");
+    setTimeout(() => i.channel.delete(), 3000);
   }
 });
 
-// ================= LOGIN =================
-client.login(process.env.BOT_TOKEN);
+/* ================== LOGIN ================== */
+client.login(TOKEN);
