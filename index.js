@@ -6,6 +6,7 @@ import {
   ButtonStyle,
   ChannelType,
   EmbedBuilder,
+  ActivityType,
   Events
 } from "discord.js";
 
@@ -98,3 +99,4 @@ client.on(Events.InteractionCreate, async (i) => {
 });
 
 client.login(TOKEN);
+
