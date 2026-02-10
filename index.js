@@ -7,16 +7,23 @@ import {
   ChannelType,
   EmbedBuilder
 } from "discord.js";
-import config from "./config.json" assert { type: "json" };
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
 });
 
+// ENV VARIABLES
+const TOKEN = process.env.BOT_TOKEN;
+const GUILD_ID = process.env.GUILD_ID;
+const TICKET_CATEGORY = process.env.TICKET_CATEGORY;
+const STAFF_ROLE = process.env.STAFF_ROLE;
+const LOG_CHANNEL = process.env.LOG_CHANNEL;
+
 client.once("ready", () => {
   console.log(`✅ Ticket bot aktif: ${client.user.tag}`);
 });
 
+// BUTON İŞLEMLERİ
 client.on("interactionCreate", async (i) => {
   if (!i.isButton()) return;
 
@@ -32,20 +39,11 @@ client.on("interactionCreate", async (i) => {
     const channel = await i.guild.channels.create({
       name: `ticket-${i.user.id}`,
       type: ChannelType.GuildText,
-      parent: config.ticketCategory,
+      parent: TICKET_CATEGORY,
       permissionOverwrites: [
-        {
-          id: i.guild.id,
-          deny: ["ViewChannel"]
-        },
-        {
-          id: i.user.id,
-          allow: ["ViewChannel", "SendMessages"]
-        },
-        {
-          id: config.staffRole,
-          allow: ["ViewChannel", "SendMessages"]
-        }
+        { id: i.guild.id, deny: ["ViewChannel"] },
+        { id: i.user.id, allow: ["ViewChannel", "SendMessages"] },
+        { id: STAFF_ROLE, allow: ["ViewChannel", "SendMessages"] }
       ]
     });
 
@@ -62,7 +60,6 @@ client.on("interactionCreate", async (i) => {
     );
 
     channel.send({ content: `<@${i.user.id}>`, embeds: [embed], components: [row] });
-
     i.reply({ content: "✅ Ticket oluşturuldu.", ephemeral: true });
   }
 
@@ -76,9 +73,9 @@ client.on("interactionCreate", async (i) => {
   }
 });
 
-// TICKET PANELİ
+// PANEL
 client.on("ready", async () => {
-  const guild = await client.guilds.fetch(config.guildId);
+  const guild = await client.guilds.fetch(GUILD_ID);
   const channel = guild.systemChannel;
   if (!channel) return;
 
@@ -97,4 +94,4 @@ client.on("ready", async () => {
   channel.send({ embeds: [embed], components: [row] });
 });
 
-client.login(config.token);
+client.login(TOKEN);
